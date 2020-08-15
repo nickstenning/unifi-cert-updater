@@ -8,13 +8,13 @@ if [ ! -e unificerts.latest.tar ]; then
 fi
 
 if [ -e cert-backups/unifi.1.crt ]; then
-  cp cert-backups/unifi.1.crt cert-backups/unifi.2.crt
-  cp cert-backups/unifi.1.key cert-backups/unifi.2.key
+  cp -p cert-backups/unifi.1.crt cert-backups/unifi.2.crt
+  cp -p cert-backups/unifi.1.key cert-backups/unifi.2.key
 fi
 
 if [ -e /etc/ssl/private/cloudkey.crt ]; then
-  cp /etc/ssl/private/cloudkey.crt cert-backups/unifi.1.crt
-  cp /etc/ssl/private/cloudkey.key cert-backups/unifi.1.key
+  cp -p /etc/ssl/private/cloudkey.crt cert-backups/unifi.1.crt
+  cp -p /etc/ssl/private/cloudkey.key cert-backups/unifi.1.key
 fi
 
 tar xf unificerts.latest.tar
