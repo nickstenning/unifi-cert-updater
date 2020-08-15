@@ -1,0 +1,50 @@
+#!/bin/sh
+
+set -eu
+
+if [ ! -e unificerts.latest.tar ]; then
+  echo "error: unificerts.latest.tar should exist" >&2
+  exit 1
+fi
+
+if [ -e cert-backups/unifi.1.crt ]; then
+  cp cert-backups/unifi.1.crt cert-backups/unifi.2.crt
+  cp cert-backups/unifi.1.key cert-backups/unifi.2.key
+fi
+
+if [ -e /etc/ssl/private/cloudkey.crt ]; then
+  cp /etc/ssl/private/cloudkey.crt cert-backups/unifi.1.crt
+  cp /etc/ssl/private/cloudkey.key cert-backups/unifi.1.key
+fi
+
+tar xf unificerts.latest.tar
+
+cp unifi.crt /etc/ssl/private/cloudkey.crt
+cp unifi.key /etc/ssl/private/cloudkey.key
+
+rm unifi-keystore.p12
+rm unifi-keystore.jks
+
+openssl pkcs12 -export \
+  -in unifi.crt \
+  -inkey unifi.key \
+  -out unifi-keystore.p12 \
+  -name unifi \
+  -CAfile unifi.ca \
+  -caname root \
+  -passout pass:notsecure
+keytool -importkeystore \
+  -deststorepass aircontrolenterprise \
+  -destkeypass aircontrolenterprise \
+  -destkeystore unifi-keystore.jks \
+  -srckeystore unifi-keystore.p12 \
+  -srcstoretype PKCS12 \
+  -srcstorepass notsecure \
+  -alias unifi
+
+cp unifi-keystore.jks /etc/ssl/private/unifi.keystore.jks
+md5sum -b /etc/ssl/private/unifi.keystore.jks >/etc/ssl/private/unifi.keystore.jks.md5
+
+systemctl restart nginx.service
+systemctl restart unifi.service
+

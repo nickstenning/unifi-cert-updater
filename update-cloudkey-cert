@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -eu
+
+tar -C /cf/conf/acme -cf - unifi.crt unifi.key unifi.ca | ssh root@unifi "cat >unificerts.latest.tar"
+ssh root@unifi bin/update-cert
