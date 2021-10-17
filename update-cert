@@ -12,12 +12,30 @@ if [ -e cert-backups/unifi.1.crt ]; then
   cp -p cert-backups/unifi.1.key cert-backups/unifi.2.key
 fi
 
-if [ -e /etc/ssl/private/cloudkey.crt ]; then
+# Unifi Core
+#
+# If we detect that we're on Unifi Core (v2+) then we use the Unifi Core certs
+# as canonical and back those up.
+#
+# For now, we will also manage the legacy keystore certs.
+
+unificore=0
+
+if [ -e /data/unifi-core/config/unifi-core.crt ]; then
+  unificore=1
+  cp -p /data/unifi-core/config/unifi-core.crt cert-backups/unifi.1.crt
+  cp -p /data/unifi-core/config/unifi-core.key cert-backups/unifi.1.key
+elif [ -e /etc/ssl/private/cloudkey.crt ]; then
   cp -p /etc/ssl/private/cloudkey.crt cert-backups/unifi.1.crt
   cp -p /etc/ssl/private/cloudkey.key cert-backups/unifi.1.key
 fi
 
 tar xf unificerts.latest.tar
+
+if [ $unificore -eq 1 ]; then
+  cp unifi.crt /data/unifi-core/config/unifi-core.crt
+  cp unifi.key /data/unifi-core/config/unifi-core.key
+fi
 
 cp unifi.crt /etc/ssl/private/cloudkey.crt
 cp unifi.key /etc/ssl/private/cloudkey.key
@@ -45,6 +63,10 @@ keytool -importkeystore \
 cp unifi-keystore.jks /etc/ssl/private/unifi.keystore.jks
 md5sum -b /etc/ssl/private/unifi.keystore.jks >/etc/ssl/private/unifi.keystore.jks.md5
 
-systemctl restart nginx.service
+if [ $unificore -eq 1 ]; then
+  systemctl restart unifi-core.service
+else
+  systemctl restart nginx.service
+fi
 systemctl restart unifi.service
 
